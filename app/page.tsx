@@ -62,10 +62,10 @@ async function findOrCreateUser(userId: string): Promise<{
   try {
     // const publicUserResponse = await whopApi.PublicUser({ userId: userId });
     const publicUserResponse = await fetchUser(userId);
-    username = publicUserResponse?.publicUser?.username || null;
+    username = publicUserResponse?.username || null;
 
     // Check if profilePicture is an ImageAttachment and get sourceUrl
-    const whopProfilePic = publicUserResponse?.publicUser?.profilePicture;
+    const whopProfilePic = publicUserResponse?.profilePicture;
     if (whopProfilePic && whopProfilePic.__typename === "ImageAttachment") {
       profilePictureUrl = whopProfilePic.sourceUrl || null;
     } else if (typeof whopProfilePic === "string") {

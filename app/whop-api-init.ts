@@ -107,7 +107,7 @@ export async function payWinner(whopUserId: string, amount: number) {
     }
     // const userDetails = await whopApi.PublicUser({ userId: whopUserId });
     const userDetails = await fetchUser(whopUserId);
-    const userName = userDetails.publicUser.username;
+    const userName = userDetails.username;
     const message = `@${userName} was paid $${amount.toFixed(
       2
     )} automatically for winning the game!`;
