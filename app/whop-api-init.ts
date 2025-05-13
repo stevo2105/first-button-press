@@ -54,7 +54,7 @@ export async function fetchUser(userId: string) {
 }
 
 export async function payWinner(whopUserId: string, amount: number) {
-  const realAmount = amount * 0.9;
+  const realAmount = amount;
   try {
     const response = await fetch("https://api.whop.com/public-graphql", {
       method: "POST",
@@ -85,8 +85,6 @@ export async function payWinner(whopUserId: string, amount: number) {
       }),
     });
 
-    console.log("Response:", amount);
-
     if (!response.ok) {
       throw new Error(
         `GraphQL Error: ${response.status} ${response.statusText}`
@@ -94,8 +92,9 @@ export async function payWinner(whopUserId: string, amount: number) {
     }
 
     const result = await response.json();
+    console.log(result);
     if (result.errors) {
-      throw new Error("Erro calling gql");
+      throw new Error("Error calling gql", result.errors);
     }
 
     const user = await prisma.user.findUnique({

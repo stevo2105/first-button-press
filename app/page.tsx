@@ -119,7 +119,6 @@ export default async function Page() {
     headers: headersList,
   });
 
-  // const whopUserId = process.env.OWNER_USER_ID!;
   const user = await findOrCreateUser(whopUserId);
 
   const adminUser = whopUserId === process.env.OWNER_USER_ID; // Let's set this to false to test user flow
@@ -131,7 +130,12 @@ export default async function Page() {
   if (challengeAvailable && challengeData && user) {
     content = <Button initialChallengeData={challengeData} userId={user.id} />;
   } else if (adminUser) {
-    content = <AdminChallengeForm />;
+    content = (
+      <>
+        <AdminChallengeForm />
+        <NoActiveChallenges initialMessage="No active challenges available at the moment." />
+      </>
+    );
   } else if (!user) {
     // Handle case where user ID couldn't be determined or created
 

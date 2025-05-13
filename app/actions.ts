@@ -1,7 +1,6 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
 
 // Define the state shape that the action will return and useFormState will manage
 interface FormState {
@@ -65,7 +64,6 @@ export async function createChallenge(
     console.log("Created new challenge:", newChallenge.id);
 
     // Revalidate the home page path to show the new state
-    revalidatePath("/");
 
     return {
       success: true,
