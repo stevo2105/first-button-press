@@ -74,7 +74,7 @@ export async function payWinner(whopUserId: string, amount: number) {
             destinationId: whopUserId,
             feedId: "chat_feed_1CNxeUNiTLrtNcvBZMW2hp",
             feedType: "chat_feed",
-            transferFee: realAmount * 100 * 0.03,
+            transferFee: 3,
             idempotenceKey: `payout-${whopUserId}-${Date.now()}`,
             ledgerAccountId: "ldgr_czXFOJHH4Ih14",
             reason: "creator_to_user",
@@ -91,6 +91,8 @@ export async function payWinner(whopUserId: string, amount: number) {
 
     const result = await response.json();
     if (result.errors) {
+      console.log(result);
+      console.log(result.errors);
       throw new Error("Error calling gql", result);
     }
 
