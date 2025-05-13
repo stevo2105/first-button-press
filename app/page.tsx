@@ -1,103 +1,119 @@
-import Image from "next/image";
+// app/page.tsx - Server Component
+import prisma from "@/lib/prisma";
+import Button from "./components/button";
+import AdminChallengeForm from "./components/admin-form";
 
-export default function Home() {
+// Define ChallengeData interface - can also be in a shared types file
+interface ChallengeData {
+  id: string;
+  promotionalHtml: string;
+  winAmount: number;
+}
+
+// Helper function to fetch challenge status (or use prisma directly in Page)
+async function getChallengeStatus(): Promise<{
+  challengeAvailable: boolean;
+  challengeData: ChallengeData | null;
+  message: string | null;
+}> {
+  try {
+    const availableChallenge = await prisma.challenge.findFirst({
+      where: { winnerUserId: null },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, promotionalHtml: true, winAmount: true },
+    });
+    if (availableChallenge) {
+      return {
+        challengeAvailable: true,
+        challengeData: availableChallenge,
+        message: null,
+      };
+    } else {
+      return {
+        challengeAvailable: false,
+        challengeData: null,
+        message: "No active challenges available right now.",
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching challenge status in Page:", error);
+    return {
+      challengeAvailable: false,
+      challengeData: null,
+      message: "Error loading challenge.",
+    };
+  }
+}
+
+// Finds or creates a user based on their ID (e.g., Whop User ID)
+async function findOrCreateUser(
+  userId: string
+): Promise<{ id: string } | null> {
+  if (!userId) return null; // Do nothing if no user ID provided
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true }, // Only select needed fields
+    });
+
+    if (user) {
+      return user; // User found
+    }
+
+    // User not found, create them
+    const newUser = await prisma.user.create({
+      data: {
+        id: userId,
+        // createdAt is handled by @default(now())
+      },
+      select: { id: true },
+    });
+    console.log(`Created new user: ${newUser.id}`);
+    return newUser;
+  } catch (error) {
+    console.error(`Error finding or creating user ${userId}:`, error);
+    return null; // Return null on error
+  }
+}
+
+export default async function Page() {
+  const { challengeAvailable, challengeData, message } =
+    await getChallengeStatus();
+
+  // const { userId: whopUserId } = await validateToken({
+  //   headers: headersList,
+  // });
+  const whopUserId = "user_" + Math.random().toString(36).substring(7); // Example user ID
+  const user = await findOrCreateUser(whopUserId);
+
+  const adminUser = false; // Let's set this to false to test user flow
+
+  let content;
+  if (adminUser) {
+    content = <AdminChallengeForm />;
+  } else if (challengeAvailable && challengeData && user) {
+    // Pass both challenge data AND the user ID to the Button
+    content = <Button initialChallengeData={challengeData} userId={user.id} />;
+  } else if (!user) {
+    // Handle case where user ID couldn't be determined or created
+    content = (
+      <p className="text-xl mb-8 text-red-500">
+        Error: Could not identify user.
+      </p>
+    );
+  } else {
+    // No challenge available for a valid user
+    content = (
+      <p className="text-xl mb-8">
+        {message || "No active challenges available."}
+      </p>
+    );
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div className="flex items-center justify-center min-h-screen p-8 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <main className="flex flex-col items-center text-center">{content}</main>
     </div>
   );
 }
