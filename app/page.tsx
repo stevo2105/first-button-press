@@ -6,6 +6,7 @@ import NoActiveChallenges from "./components/no-active-challenges";
 import { fetchUser } from "./whop-api-init";
 import { validateToken } from "@whop-apps/sdk";
 import { headers } from "next/headers";
+import GithubUrl from "./components/github-url";
 
 interface ChallengeData {
   id: string;
@@ -169,7 +170,13 @@ export default async function Page() {
 
   return (
     <div className="flex items-center justify-center min-h-screen p-8 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <main className="flex flex-col items-center text-center">{content}</main>
+      <main className="flex flex-col items-center text-center">
+        {content}{" "}
+        <div>
+          {" "}
+          <GithubUrl />
+        </div>
+      </main>
     </div>
   );
 }
