@@ -1,4 +1,5 @@
 import { WhopApi } from "@whop/api";
+import prisma from "@/lib/prisma";
 
 export const whopApi = WhopApi({
   appApiKey: process.env.WHOP_API_KEY!,

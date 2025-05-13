@@ -131,6 +131,7 @@ export default async function Page() {
     content = <AdminChallengeForm />;
   } else if (!user) {
     // Handle case where user ID couldn't be determined or created
+
     content = (
       <p className="text-xl mb-8 text-red-500">
         Error: Could not identify or process user.
