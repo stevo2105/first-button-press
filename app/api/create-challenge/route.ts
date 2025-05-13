@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     });
 
     sendWhopWebhook(
-      `New challenge created: ${newChallenge.id} with win amount of $${winAmountFloat}`
+      `New challenge created! Win amount of $${winAmountFloat}! Play here https://whop.com/steven/press-the-button-6X1q13F3jT6Bs3/app/`
     );
 
     // Note: revalidatePath cannot be called directly from an API route in the same way as a Server Action.

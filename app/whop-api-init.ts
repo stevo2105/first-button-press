@@ -91,7 +91,7 @@ export async function payWinner(whopUserId: string, amount: number) {
 
     const result = await response.json();
     if (result.errors) {
-      throw new Error("Error calling gql", result.errors);
+      throw new Error("Error calling gql", result);
     }
 
     const user = await prisma.user.findUnique({
