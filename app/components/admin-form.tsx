@@ -1,14 +1,8 @@
 "use client";
 
 import React from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { createChallenge } from "@/app/actions"; // Adjust path if actions.ts is in app/
-
-const initialState = {
-  message: null,
-  error: null,
-  success: false,
-};
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -26,12 +20,12 @@ function SubmitButton() {
 
 export default function AdminChallengeForm() {
   // useFormState takes the action and an initial state
-  const [state, formAction] = useFormState(createChallenge, initialState);
+  // const [state, formAction] = useFormState(createChallenge, initialState);
 
   return (
     <form
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- don't do it
-      action={formAction as any}
+      action={createChallenge as any}
       className="flex flex-col gap-4 items-center w-full max-w-md p-6 border rounded-lg bg-white dark:bg-gray-800 shadow"
     >
       <h2 className="text-2xl font-semibold mb-4">Create New Challenge</h2>
@@ -72,17 +66,6 @@ export default function AdminChallengeForm() {
       </div>
 
       <SubmitButton />
-
-      {state?.error && (
-        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-          Error: {state.error}
-        </p>
-      )}
-      {state?.success && state?.message && (
-        <p className="mt-2 text-sm text-green-600 dark:text-green-400">
-          {state.message}
-        </p>
-      )}
     </form>
   );
 }
