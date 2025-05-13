@@ -1,7 +1,6 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { validateToken } from "@whop-apps/sdk";
 import { revalidatePath } from "next/cache";
 
 // Define the state shape that the action will return and useFormState will manage
@@ -19,19 +18,20 @@ export async function createChallenge(
 ): Promise<FormState> {
   // Ensure return type matches FormState
 
-  const { userId: whopUserId } = await validateToken({
-    headers,
-  });
+  console.log(headers);
+  // const { userId: whopUserId } = await validateToken({
+  //   headers,
+  // });
 
-  const adminUser = whopUserId === process.env.OWNER_USER_ID;
+  // const adminUser = whopUserId === process.env.OWNER_USER_ID;
 
-  if (!adminUser) {
-    return {
-      error: "You are not authorized to create a challenge.",
-      message: null,
-      success: false,
-    };
-  }
+  // if (!adminUser) {
+  //   return {
+  //     error: "You are not authorized to create a challenge.",
+  //     message: null,
+  //     success: false,
+  //   };
+  // }
   const rawFormData = {
     winAmount: formData.get("winAmount"),
     promotionalHtml: formData.get("promotionalHtml"),
