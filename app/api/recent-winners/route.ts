@@ -6,6 +6,8 @@ interface ChallengeWithWinnerData {
   id: string;
   winAmount: number;
   winnerUserId: string | null; // It will not be null based on the where clause, but keep for consistency
+  createdAt: Date | null; // Added for completion time calculation
+  challengeEndedAt: Date | null; // Added challengeEndedAt for sorting
   winnerUser: {
     username: string | null;
     profilePicture: string | null;
@@ -18,20 +20,18 @@ export async function GET() {
     const recentChallengesWithWinners = (await prisma.challenge.findMany({
       where: {
         winnerUserId: { not: null }, // Only challenges that have a winner
+        challengeEndedAt: { not: null }, // Ensure we only get challenges that have properly ended
       },
       orderBy: {
-        // Assuming you have a field like `updatedAt` or `claimedAt` on Challenge
-        // that gets set when a winner is declared. If not, `createdAt` of the challenge
-        // might be the next best thing, though it reflects creation time, not win time.
-        // For this example, I'll assume `createdAt` of the challenge (desc) is good enough.
-        // Or, if you have a `Winner` table with a timestamp, query that instead and join.
-        createdAt: "desc",
+        challengeEndedAt: "desc", // Sort by when the challenge ended
       },
       take: 5,
       select: {
         id: true, // challenge ID
         winAmount: true,
         winnerUserId: true,
+        createdAt: true, // Select the start field
+        challengeEndedAt: true, // Select the end field
         // Include winnerUser details
         winnerUser: {
           // This assumes you have a relation named 'winnerUser' in your Challenge model
@@ -44,13 +44,24 @@ export async function GET() {
     })) as ChallengeWithWinnerData[]; // Added type assertion
 
     // Transform the data to a more convenient structure for the frontend if needed
-    const winners = recentChallengesWithWinners.map((challenge) => ({
-      id: challenge.id, // Challenge ID
-      winAmount: challenge.winAmount,
-      winnerUserId: challenge.winnerUserId,
-      username: challenge.winnerUser?.username || "Unknown User", // Fallback for username
-      profilePicture: challenge.winnerUser?.profilePicture || null, // Fallback for profile picture
-    }));
+    const winners = recentChallengesWithWinners.map((challenge) => {
+      let completionTimeMs: number | undefined = undefined;
+      if (challenge.createdAt && challenge.challengeEndedAt) {
+        completionTimeMs =
+          challenge.challengeEndedAt.getTime() - challenge.createdAt.getTime();
+      }
+
+      return {
+        id: challenge.id, // Challenge ID
+        winAmount: challenge.winAmount,
+        winnerUserId: challenge.winnerUserId,
+        username: challenge.winnerUser?.username || "Unknown User", // Fallback for username
+        profilePicture: challenge.winnerUser?.profilePicture || null, // Fallback for profile picture
+        completionTimeMs: completionTimeMs,
+        // You could also include challengeEndedAt in the response if the frontend needs it
+        // challengeEndedAt: challenge.challengeEndedAt,
+      };
+    });
 
     return NextResponse.json({ success: true, winners: winners });
   } catch (error) {

@@ -57,6 +57,7 @@ export async function POST(request: Request) {
               },
               data: {
                 winnerUserId: userId,
+                challengeEndedAt: new Date(), // Set challengeEndedAt to current time
               },
             });
 
@@ -88,7 +89,9 @@ export async function POST(request: Request) {
 
           return NextResponse.json({
             success: true,
-            message: `Congratulations ${winnerUsername}, you won $${winningAmountFromChallenge}!`,
+            message: `Congratulations ${winnerUsername}, you won $${winningAmountFromChallenge.toFixed(
+              2
+            )}!`,
           });
         } else {
           // This case should ideally not be reached if result.won is true

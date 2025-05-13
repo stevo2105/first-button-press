@@ -29,6 +29,7 @@ model Challenge {
   winAmount       Float    @map("win_amount")
   promotionalHtml String   @map("promotional_html")
   createdAt       DateTime @default(now())
+  challengeEndedAt DateTime? @map("challenge_ended_at")
 
   winnerUserId String? @map("winner_user_id")
   winnerUser   User?   @relation("WinnerUser", fields: [winnerUserId], references: [id])

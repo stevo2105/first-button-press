@@ -17,7 +17,6 @@ export async function createChallenge(
 ): Promise<FormState> {
   // Ensure return type matches FormState
 
-  console.log(headers);
   // const { userId: whopUserId } = await validateToken({
   //   headers,
   // });

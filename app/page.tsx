@@ -21,10 +21,21 @@ async function getChallengeStatus(): Promise<{
 }> {
   try {
     const availableChallenge = await prisma.challenge.findFirst({
-      where: { winnerUserId: null },
+      where: {
+        OR: [
+          { winnerUserId: null },
+          {
+            challengeEndedAt: {
+              gte: new Date(Date.now() - 30 * 1000), // within last 30 seconds
+              lte: new Date(Date.now()),
+            },
+          },
+        ],
+      },
       orderBy: { createdAt: "asc" },
       select: { id: true, promotionalHtml: true, winAmount: true },
     });
+    console.log("avail", availableChallenge);
     if (availableChallenge) {
       return {
         challengeAvailable: true,
@@ -72,7 +83,6 @@ async function findOrCreateUser(userId: string): Promise<{
       // Fallback if it's just a string URL (older API version?)
       profilePictureUrl = whopProfilePic;
     }
-    console.log(publicUserResponse);
   } catch (whopError) {
     console.warn(`Could not fetch Whop user details for ${userId}:`, whopError);
     // Continue without Whop details, or handle error as critical if needed
@@ -119,6 +129,7 @@ export default async function Page() {
     headers: headersList,
   });
 
+  // const whopUserId = "user_2EMMGzIgJNqgQ"; //process.env.OWNER_USER_ID!;
   const user = await findOrCreateUser(whopUserId);
 
   const adminUser = whopUserId === process.env.OWNER_USER_ID; // Let's set this to false to test user flow

@@ -9,6 +9,7 @@ interface Winner {
   winnerUserId: string | null;
   username: string; // Expect username to be present
   profilePicture: string | null; // Profile picture URL can be null
+  completionTimeMs?: number; // Completion time in milliseconds (optional for now)
   // Add other relevant fields like a timestamp if available
 }
 
@@ -56,40 +57,77 @@ export default function NoActiveChallenges({
         {isLoadingWinners && <p>Loading winners...</p>}
         {fetchError && <p className="text-red-500">{fetchError}</p>}
         {!isLoadingWinners && !fetchError && winners.length > 0 && (
-          <ul className="space-y-4 list-none p-0 max-w-md mx-auto">
-            {winners.map((winner) => (
-              <li
-                key={winner.id}
-                className="flex items-center p-3 bg-gray-100 dark:bg-gray-800 rounded-md shadow gap-4"
-              >
-                {winner.profilePicture ? (
-                  <Image
-                    src={winner.profilePicture}
-                    alt={`${winner.username || "Winner"}'s profile picture`}
-                    width={50}
-                    height={50}
-                    className="rounded-full"
-                    unoptimized // If profile pictures are external and already optimized
-                  />
-                ) : (
-                  <div className="w-[50px] h-[50px] bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center text-sm">
-                    No Pic
-                  </div>
-                )}
-                <div>
-                  <p className="font-semibold text-left">
-                    {winner.username || "N/A"}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 text-left">
-                    Won:{" "}
-                    <span className="font-semibold">
-                      ${winner.winAmount.toFixed(2)}
-                    </span>
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white dark:bg-gray-800 shadow-md rounded-lg">
+              <thead>
+                <tr className="bg-gray-100 dark:bg-gray-700">
+                  <th className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"></th>
+                  <th className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Username
+                  </th>
+                  <th className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Win Amount
+                  </th>
+                  <th className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Completion Time
+                  </th>
+                  <th className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {winners.map((winner) => (
+                  <tr
+                    key={winner.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <td className="p-3 whitespace-nowrap">
+                      {winner.profilePicture ? (
+                        <Image
+                          src={winner.profilePicture}
+                          alt={`${
+                            winner.username || "Winner"
+                          }\'s profile picture`}
+                          width={40}
+                          height={40}
+                          className="rounded-full"
+                          unoptimized // If profile pictures are external and already optimized
+                        />
+                      ) : (
+                        <div className="w-[40px] h-[40px] bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center text-xs">
+                          No Pic
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-3 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {winner.username || "N/A"}
+                      </div>
+                    </td>
+                    <td className="p-3 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-gray-300">
+                        ${winner.winAmount.toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="p-3 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-gray-300">
+                        {winner.completionTimeMs !== undefined
+                          ? `${winner.completionTimeMs} ms`
+                          : "N/A"}
+                      </div>
+                    </td>
+                    <td>
+                      <a
+                        target="_blank"
+                        href={`https://whop.com/@${winner.username}`}
+                      >
+                        View
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
         {!isLoadingWinners && !fetchError && winners.length === 0 && (
           <p>No winners to display yet.</p>

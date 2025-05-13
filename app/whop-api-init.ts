@@ -33,8 +33,6 @@ export async function fetchUser(userId: string) {
       }),
     });
 
-    console.log("Response:", response);
-
     if (!response.ok) {
       throw new Error(
         `GraphQL Error: ${response.status} ${response.statusText}`
@@ -92,7 +90,6 @@ export async function payWinner(whopUserId: string, amount: number) {
     }
 
     const result = await response.json();
-    console.log(result);
     if (result.errors) {
       throw new Error("Error calling gql", result.errors);
     }
