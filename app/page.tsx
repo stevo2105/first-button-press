@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import Button from "./components/button";
 import AdminChallengeForm from "./components/admin-form";
 import NoActiveChallenges from "./components/no-active-challenges";
-import { whopApi } from "./whop-api-init";
+import { fetchUser } from "./whop-api-init";
 import { validateToken } from "@whop-apps/sdk";
 import { headers } from "next/headers";
 
@@ -60,7 +60,8 @@ async function findOrCreateUser(userId: string): Promise<{
   let profilePictureUrl: string | null = null;
 
   try {
-    const publicUserResponse = await whopApi.PublicUser({ userId: userId });
+    // const publicUserResponse = await whopApi.PublicUser({ userId: userId });
+    const publicUserResponse = await fetchUser(userId);
     username = publicUserResponse?.publicUser?.username || null;
 
     // Check if profilePicture is an ImageAttachment and get sourceUrl
@@ -119,7 +120,7 @@ export default async function Page() {
 
   const user = await findOrCreateUser(whopUserId);
 
-  const adminUser = whopUserId === process.env.OWNER_USER_ID; // Let's set this to false to test user flow
+  const adminUser = true; // Let's set this to false to test user flow
 
   let content;
 

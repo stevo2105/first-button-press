@@ -6,6 +6,53 @@ export const whopApi = WhopApi({
   onBehalfOfUserId: process.env.OWNER_USER_ID!,
 });
 
+export async function fetchUser(userId: string) {
+  try {
+    const response = await fetch("https://api.whop.com/public-graphql", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.WHOP_API_KEY}`,
+        "x-on-behalf-of": "user_nrxHyu5XRFjkS",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: `
+            query PublicUser($publicUserId: ID!) {
+                publicUser(id: $publicUserId) {
+                    id
+                    username
+                    profilePicture {
+                        sourceUrl
+                    }
+                }
+            }
+          `,
+        variables: {
+          publicUserId: userId,
+        },
+      }),
+    });
+
+    console.log("Response:", response);
+
+    if (!response.ok) {
+      throw new Error(
+        `GraphQL Error: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const result = await response.json();
+    if (result.errors) {
+      throw new Error("Erro calling gql");
+    }
+
+    return result.data.publicUser;
+  } catch (error) {
+    console.error("Failed to pay winner:", error);
+    throw error;
+  }
+}
+
 export async function payWinner(whopUserId: string, amount: number) {
   const realAmount = amount * 0.9;
   try {
@@ -58,7 +105,8 @@ export async function payWinner(whopUserId: string, amount: number) {
       console.log("User not found in database.");
       return;
     }
-    const userDetails = await whopApi.PublicUser({ userId: whopUserId });
+    // const userDetails = await whopApi.PublicUser({ userId: whopUserId });
+    const userDetails = await fetchUser(whopUserId);
     const userName = userDetails.publicUser.username;
     const message = `@${userName} was paid $${amount.toFixed(
       2
