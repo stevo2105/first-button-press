@@ -80,12 +80,15 @@ export async function POST(request: Request) {
       // 3. Return response based on transaction outcome
       if (result.won) {
         if (typeof winningAmountFromChallenge === "number") {
-          await payWinner(userId, winningAmountFromChallenge);
+          try {
+            await payWinner(userId, winningAmountFromChallenge);
+          } catch (error) {
+            console.error("Error paying winner:", error);
+          }
 
           return NextResponse.json({
             success: true,
-            message: `Congratulations ${winnerUsername}, you won $${winningAmountFromChallenge}
-            )}!`,
+            message: `Congratulations ${winnerUsername}, you won $${winningAmountFromChallenge}!`,
           });
         } else {
           // This case should ideally not be reached if result.won is true

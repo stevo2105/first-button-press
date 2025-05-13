@@ -65,7 +65,7 @@ async function findOrCreateUser(userId: string): Promise<{
     username = publicUserResponse?.username || null;
 
     // Check if profilePicture is an ImageAttachment and get sourceUrl
-    const whopProfilePic = publicUserResponse?.profilePicture;
+    const whopProfilePic = publicUserResponse?.profilePicture.sourceUrl;
     if (whopProfilePic && whopProfilePic.__typename === "ImageAttachment") {
       profilePictureUrl = whopProfilePic.sourceUrl || null;
     } else if (typeof whopProfilePic === "string") {
@@ -119,6 +119,7 @@ export default async function Page() {
     headers: headersList,
   });
 
+  // const whopUserId = process.env.OWNER_USER_ID!;
   const user = await findOrCreateUser(whopUserId);
 
   const adminUser = whopUserId === process.env.OWNER_USER_ID; // Let's set this to false to test user flow
