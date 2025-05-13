@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { validateToken } from "@whop-apps/sdk";
 import { headers as getNextHeaders } from "next/headers"; // To get headers in API route
+import { sendWhopWebhook } from "@/app/whop-api-init";
 
 export async function POST(request: Request) {
   // Get headers for token validation
@@ -63,6 +64,10 @@ export async function POST(request: Request) {
         promotionalHtml: promotionalHtmlString,
       },
     });
+
+    sendWhopWebhook(
+      `New challenge created: ${newChallenge.id} with win amount of $${winAmountFloat}`
+    );
 
     // Note: revalidatePath cannot be called directly from an API route in the same way as a Server Action.
     // The client will need to handle UI updates or page refresh/re-fetch if immediate reflection is needed.

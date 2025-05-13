@@ -89,9 +89,7 @@ export async function POST(request: Request) {
 
           return NextResponse.json({
             success: true,
-            message: `Congratulations ${winnerUsername}, you won $${winningAmountFromChallenge.toFixed(
-              2
-            )}!`,
+            message: `Congratulations ${winnerUsername}, you won $${winningAmountFromChallenge}!`,
           });
         } else {
           // This case should ideally not be reached if result.won is true
