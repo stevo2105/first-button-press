@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { payWinner } from "@/app/whop-api-init";
 
 // Helper function to check if an error has a specific code (like P2025)
 function isPrismaErrorWithCode(error: unknown, code: string): boolean {
@@ -25,6 +26,9 @@ export async function POST(request: Request) {
       );
     }
 
+    let winningAmountFromChallenge: number | null = null;
+    let winnerUsername: string = "Unknown User"; // Default username, ensure it's always a string
+
     // --- Atomic Update Attempt ---
     // We will use a transaction to ensure atomicity, although a single update
     // with a where clause checking for null winner is often sufficient.
@@ -39,12 +43,13 @@ export async function POST(request: Request) {
               id: challengeId,
               winnerUserId: null, // Crucial: Only match if no winner
             },
-            select: { id: true }, // Only need ID to confirm existence
+            select: { id: true, winAmount: true }, // Select winAmount to use it in the success message
           });
 
           // 2. If challenge exists and is not won, update it
           if (challenge) {
-            const updatedChallenge = await tx.challenge.update({
+            winningAmountFromChallenge = challenge.winAmount; // Store the amount won
+            await tx.challenge.update({
               where: {
                 id: challengeId,
                 // Optional: Add winnerUserId: null here again for extra safety,
@@ -53,9 +58,18 @@ export async function POST(request: Request) {
               data: {
                 winnerUserId: userId,
               },
-              select: { promotionalHtml: true, winAmount: true }, // Return some data on success
             });
-            return { won: true, challengeData: updatedChallenge };
+
+            // Fetch the username of the winner
+            const winnerDetails = await tx.user.findUnique({
+              where: { id: userId },
+              select: { username: true },
+            });
+            if (winnerDetails && winnerDetails.username) {
+              winnerUsername = winnerDetails.username;
+            }
+
+            return { won: true };
           } else {
             // Challenge was not found OR it already had a winner when we checked
             return { won: false };
@@ -65,11 +79,23 @@ export async function POST(request: Request) {
 
       // 3. Return response based on transaction outcome
       if (result.won) {
-        return NextResponse.json({
-          success: true,
-          message: `Congratulations user ${userId}, you were first!`,
-          challengeData: result.challengeData,
-        });
+        if (typeof winningAmountFromChallenge === "number") {
+          await payWinner(userId, winningAmountFromChallenge);
+
+          return NextResponse.json({
+            success: true,
+            message: `Congratulations ${winnerUsername}, you won $${winningAmountFromChallenge}
+            )}!`,
+          });
+        } else {
+          // This case should ideally not be reached if result.won is true
+          // because winningAmountFromChallenge would have been set.
+          console.error("Winning amount was not a number after a win.");
+          return NextResponse.json({
+            success: true,
+            message: `Congratulations ${winnerUsername}, you were first! (Amount not determined)`,
+          });
+        }
       } else {
         return NextResponse.json(
           {

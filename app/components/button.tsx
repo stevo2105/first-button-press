@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 
 // Interface for the data passed from the page
 interface ChallengeData {
@@ -46,37 +46,6 @@ export default function Button({ initialChallengeData, userId }: ButtonProps) {
     hasWon: false,
     isChallengeOver: false, // Assume challenge is active initially
   });
-
-  // Ref to hold the background audio element
-  const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Effect for background music
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      // Create audio element only once
-      if (!backgroundAudioRef.current) {
-        backgroundAudioRef.current = new Audio("/background.m4a");
-        backgroundAudioRef.current.loop = true;
-        backgroundAudioRef.current.volume = 0.5; // 50% volume
-      }
-
-      // Attempt to play
-      backgroundAudioRef.current.play().catch((error) => {
-        console.warn(
-          "Background audio autoplay failed. User interaction might be needed first.",
-          error
-        );
-        // You could potentially try playing again on the first user interaction (e.g., in handlePress)
-      });
-
-      // Cleanup function to stop audio when component unmounts
-      return () => {
-        backgroundAudioRef.current?.pause();
-        // Optional: nullify ref if needed, though usually just pausing is enough
-        // backgroundAudioRef.current = null;
-      };
-    }
-  }, []); // Empty array ensures this runs only on mount and unmount
 
   // --- Button Press Handlers ---
   const handlePress = () => {
@@ -164,9 +133,11 @@ export default function Button({ initialChallengeData, userId }: ButtonProps) {
   // --- Render Logic Helpers ---
   // Now assume challenge is available if this component is rendered
   const getButtonImageSrc = () => {
+    // If challenge is over, show result GIF
     if (state.isChallengeOver) {
-      return "/button_disabled.png";
+      return state.hasWon ? "/winner.gif" : "/loser.gif";
     }
+    // Otherwise, show button state
     return state.isButtonPressed ? "/button_pressed.png" : "/button.png";
   };
 
@@ -187,13 +158,13 @@ export default function Button({ initialChallengeData, userId }: ButtonProps) {
   };
 
   const getImageClassName = () => {
+    // Keep scale effect, remove grayscale as it might look weird on GIFs
     return `select-none transition-transform duration-100 ease-in-out \
             ${
               state.isButtonPressed && !state.isChallengeOver
                 ? "scale-95"
                 : "scale-100"
-            }\
-            ${state.isChallengeOver ? "filter grayscale" : ""}`; // Only grayscale when over
+            }`;
   };
 
   // --- Render Component ---
@@ -213,12 +184,10 @@ export default function Button({ initialChallengeData, userId }: ButtonProps) {
 
       {/* The Button itself */}
       <div
-        role="button"
-        // Disable focus/interaction based on internal state (isLoading, isChallengeOver)
+        role={state.isChallengeOver ? undefined : "button"}
         tabIndex={state.isChallengeOver || state.isLoading ? -1 : 0}
-        aria-pressed={state.isButtonPressed}
+        aria-pressed={state.isChallengeOver ? undefined : state.isButtonPressed}
         aria-label={getButtonAltText()}
-        // Conditionally attach handlers based on internal state
         onMouseDown={
           !state.isChallengeOver && !state.isLoading ? handlePress : undefined
         }

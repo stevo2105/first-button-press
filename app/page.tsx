@@ -2,8 +2,11 @@
 import prisma from "@/lib/prisma";
 import Button from "./components/button";
 import AdminChallengeForm from "./components/admin-form";
+import NoActiveChallenges from "./components/no-active-challenges";
+import { whopApi } from "./whop-api-init";
+import { validateToken } from "@whop-apps/sdk";
+import { headers } from "next/headers";
 
-// Define ChallengeData interface - can also be in a shared types file
 interface ChallengeData {
   id: string;
   promotionalHtml: string;
@@ -45,69 +48,103 @@ async function getChallengeStatus(): Promise<{
   }
 }
 
-// Finds or creates a user based on their ID (e.g., Whop User ID)
-async function findOrCreateUser(
-  userId: string
-): Promise<{ id: string } | null> {
-  if (!userId) return null; // Do nothing if no user ID provided
+// Finds or creates a user, and updates/sets username and profilePicture
+async function findOrCreateUser(userId: string): Promise<{
+  id: string;
+  username?: string | null;
+  profilePicture?: string | null;
+} | null> {
+  if (!userId) return null;
+
+  let username: string | null = null;
+  let profilePictureUrl: string | null = null;
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true }, // Only select needed fields
-    });
+    const publicUserResponse = await whopApi.PublicUser({ userId: userId });
+    username = publicUserResponse?.publicUser?.username || null;
 
-    if (user) {
-      return user; // User found
+    // Check if profilePicture is an ImageAttachment and get sourceUrl
+    const whopProfilePic = publicUserResponse?.publicUser?.profilePicture;
+    if (whopProfilePic && whopProfilePic.__typename === "ImageAttachment") {
+      profilePictureUrl = whopProfilePic.sourceUrl || null;
+    } else if (typeof whopProfilePic === "string") {
+      // Fallback if it's just a string URL (older API version?)
+      profilePictureUrl = whopProfilePic;
     }
+  } catch (whopError) {
+    console.warn(`Could not fetch Whop user details for ${userId}:`, whopError);
+    // Continue without Whop details, or handle error as critical if needed
+  }
 
-    // User not found, create them
-    const newUser = await prisma.user.create({
-      data: {
+  try {
+    const user = await prisma.user.upsert({
+      where: { id: userId },
+      update: {
+        username: username, // Update with latest from Whop API
+        profilePicture: profilePictureUrl,
+      },
+      create: {
         id: userId,
+        username: username,
+        profilePicture: profilePictureUrl,
         // createdAt is handled by @default(now())
       },
-      select: { id: true },
+      select: { id: true, username: true, profilePicture: true }, // Select all relevant fields
     });
-    console.log(`Created new user: ${newUser.id}`);
-    return newUser;
-  } catch (error) {
-    console.error(`Error finding or creating user ${userId}:`, error);
-    return null; // Return null on error
+
+    console.log(
+      `User ${user.id} processed. Username: ${user.username}, Pic: ${user.profilePicture}`
+    );
+    return user;
+  } catch (dbError) {
+    console.error(`Database error for user ${userId}:`, dbError);
+    // If Whop details were fetched but DB failed, we lose them for this request.
+    // Depending on requirements, you might try to fetch just the user ID if upsert fails
+    // or return a more specific error.
+    return null;
   }
 }
 
 export default async function Page() {
-  const { challengeAvailable, challengeData, message } =
-    await getChallengeStatus();
+  const {
+    challengeAvailable,
+    challengeData,
+    message: challengeStatusMessage,
+  } = await getChallengeStatus();
+  const headersList = await headers();
 
-  // const { userId: whopUserId } = await validateToken({
-  //   headers: headersList,
-  // });
-  const whopUserId = "user_" + Math.random().toString(36).substring(7); // Example user ID
+  const { userId: whopUserId } = await validateToken({
+    headers: headersList,
+  });
+
   const user = await findOrCreateUser(whopUserId);
 
-  const adminUser = false; // Let's set this to false to test user flow
+  const adminUser = whopUserId === process.env.OWNER_USER_ID; // Let's set this to false to test user flow
 
   let content;
-  if (adminUser) {
-    content = <AdminChallengeForm />;
-  } else if (challengeAvailable && challengeData && user) {
-    // Pass both challenge data AND the user ID to the Button
+
+  // always check first for challenge to let the admin play
+
+  if (challengeAvailable && challengeData && user) {
     content = <Button initialChallengeData={challengeData} userId={user.id} />;
+  } else if (adminUser) {
+    content = <AdminChallengeForm />;
   } else if (!user) {
     // Handle case where user ID couldn't be determined or created
     content = (
       <p className="text-xl mb-8 text-red-500">
-        Error: Could not identify user.
+        Error: Could not identify or process user.
       </p>
     );
   } else {
-    // No challenge available for a valid user
+    // Pass the challenge status message to NoActiveChallenges component
     content = (
-      <p className="text-xl mb-8">
-        {message || "No active challenges available."}
-      </p>
+      <NoActiveChallenges
+        initialMessage={
+          challengeStatusMessage ||
+          "No active challenges available at the moment."
+        }
+      />
     );
   }
 
