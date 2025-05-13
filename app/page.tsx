@@ -120,7 +120,7 @@ export default async function Page() {
 
   const user = await findOrCreateUser(whopUserId);
 
-  const adminUser = true; // Let's set this to false to test user flow
+  const adminUser = whopUserId === process.env.OWNER_USER_ID; // Let's set this to false to test user flow
 
   let content;
 
