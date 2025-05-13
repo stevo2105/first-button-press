@@ -72,6 +72,7 @@ async function findOrCreateUser(userId: string): Promise<{
       // Fallback if it's just a string URL (older API version?)
       profilePictureUrl = whopProfilePic;
     }
+    console.log(publicUserResponse);
   } catch (whopError) {
     console.warn(`Could not fetch Whop user details for ${userId}:`, whopError);
     // Continue without Whop details, or handle error as critical if needed
@@ -93,7 +94,7 @@ async function findOrCreateUser(userId: string): Promise<{
       select: { id: true, username: true, profilePicture: true }, // Select all relevant fields
     });
 
-    console.log(
+    console.warn(
       `User ${user.id} processed. Username: ${user.username}, Pic: ${user.profilePicture}`
     );
     return user;
